@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tabler Farm — POS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap');
+
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #f0ebe0;
+  color: #1a2e1a;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh; /* dynamic viewport height — handles Android chrome bar */
+}
+
+/* ── CSS VARIABLES ── */
+:root {
+  --green:      #2d5016;
+  --green-mid:  #4a7c2f;
+  --green-lt:   #7ab648;
+  --cream:      #f0ebe0;
+  --cream-dk:   #ddd5c0;
+  --white:      #ffffff;
+  --tan:        #b8a888;
+  --brown:      #5c3d1e;
+  --red:        #b83232;
+  --red-lt:     #d94040;
+  --border:     #ddd5c0;
+  /* Touch target minimum: 48px per Google Material guidelines */
+  --touch:      52px;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--green);
+  color: var(--cream);
+  padding: 0 14px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.brand-icon {
+  width: 34px; height: 34px; flex-shrink: 0;
+  background: var(--green-mid); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.brand-text h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; font-weight: 700; line-height: 1.1;
+  white-space: nowrap;
+}
+.brand-text span {
+  font-size: 9px; font-weight: 400; color: var(--tan);
+  letter-spacing: .8px; text-transform: uppercase; display: block;
+}
+.hdr-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.reader-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.1); border-radius: 20px;
+  padding: 5px 10px; font-size: 11px; color: var(--tan);
+  cursor: pointer; border: none; font-family: 'DM Sans';
+  height: 32px;
+}
+.reader-pill.connected { color: var(--cream); background: rgba(122,182,72,.25); }
+.rdot { width: 6px; height: 6px; border-radius: 50%; background: #666; flex-shrink: 0; transition: background .3s; }
+.reader-pill.connected .rdot { background: var(--green-lt); }
+.hdr-btn {
+  height: 32px; padding: 0 10px; border-radius: 16px;
+  background: none; border: 1px solid rgba(255,255,255,.2);
+  color: var(--tan); font-size: 11px; font-family: 'DM Sans'; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+}
+.hdr-btn.active { background: var(--green-mid); border-color: var(--green-mid); color: white; }
+
+/* ── MAIN SCROLL AREA ── */
+main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── CATEGORY PILLS ── */
+.cat-scroll {
+  display: flex; gap: 7px;
+  overflow-x: auto; overflow-y: hidden;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+.cat-scroll::-webkit-scrollbar { display: none; }
+.cat-pill {
+  height: 36px; padding: 0 16px;
+  border-radius: 18px; border: 1.5px solid var(--border);
+  background: var(--white); font-size: 13px; font-weight: 500;
+  font-family: 'DM Sans'; cursor: pointer; white-space: nowrap;
+  color: var(--green); flex-shrink: 0; transition: all .15s;
+}
+.cat-pill.active { background: var(--green); color: white; border-color: var(--green); }
+
+/* ── PRODUCT GRID ── */
+/* S710 = 360px wide, 12px padding each side = 336px content
+   2 columns with 10px gap = (336-10)/2 = 163px per card — good tap size */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.product-card {
+  background: var(--white);
+  border-radius: 14px;
+  padding: 14px 10px 12px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  text-align: center;
+  transition: all .12s;
+  min-height: 100px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px;
+  -webkit-tap-highlight-color: rgba(74,124,47,.15);
+  position: relative;
+  overflow: hidden;
+}
+.product-card:active { transform: scale(.96); background: #f5fbee; border-color: var(--green-lt); }
+.product-card.flash { border-color: var(--green-mid); background: #f0f9e4; }
+.product-card .em { font-size: 30px; line-height: 1; }
+.product-card .pname { font-size: 13px; font-weight: 600; color: var(--green); line-height: 1.2; }
+.product-card .pprice { font-size: 14px; font-weight: 700; color: var(--green-mid); }
+.product-card .punit { font-size: 10px; color: #999; }
+/* qty badge on card */
+.card-badge {
+  position: absolute; top: 7px; right: 7px;
+  background: var(--green-mid); color: white;
+  border-radius: 10px; font-size: 10px; font-weight: 700;
+  padding: 2px 6px; display: none;
+}
+.product-card.has-qty .card-badge { display: block; }
+
+.product-card.custom-card { background: var(--green); border-color: transparent; }
+.product-card.custom-card .pname { color: var(--cream); }
+.product-card.custom-card .pprice { color: var(--green-lt); }
+.product-card.custom-card:active { background: var(--green-mid); }
+
+/* ── SOLD OUT STATE ── */
+.product-card.sold-out { opacity: .55; cursor: default; }
+.product-card.sold-out:active { transform: none; background: var(--white); border-color: transparent; }
+.product-card.sold-out .pprice { color: var(--red); }
+.sold-out-ribbon {
+  position: absolute; top: 0; left: 0; right: 0;
+  background: var(--red); color: white;
+  font-size: 9px; font-weight: 700; letter-spacing: .6px;
+  text-transform: uppercase; text-align: center;
+  padding: 3px 0; display: none;
+}
+.product-card.sold-out .sold-out-ribbon { display: block; }
+
+/* ── STOCK SHEET ── */
+.stock-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-bottom: 1px solid var(--cream);
+}
+.stock-row:last-child { border: none; }
+.stock-info { display: flex; align-items: center; gap: 10px; }
+.stock-em { font-size: 22px; }
+.stock-name { font-size: 14px; font-weight: 600; }
+.stock-cat  { font-size: 11px; color: #888; }
+.stock-toggle-wrap { display: flex; align-items: center; gap: 8px; }
+.stock-status { font-size: 11px; font-weight: 600; }
+.stock-status.in  { color: var(--green-mid); }
+.stock-status.out { color: var(--red); }
+
+/* ── CART STRIP (fixed at bottom) ── */
+.cart-strip {
+  flex-shrink: 0;
+  background: var(--white);
+  border-top: 1.5px solid var(--border);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cart-summary {
+  flex: 1; min-width: 0; cursor: pointer;
+}
+.cart-summary-top {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+}
+.cart-label { font-size: 11px; color: #888; font-weight: 500; }
+.cart-badge {
+  background: var(--green-mid); color: white;
+  border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700;
+}
+.cart-items-preview {
+  font-size: 12px; color: #666;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.btn-charge {
+  height: var(--touch);
+  padding: 0 18px;
+  background: var(--green-mid);
+  color: white; border: none; border-radius: 12px;
+  font-size: 15px; font-weight: 700; font-family: 'DM Sans';
+  cursor: pointer; transition: background .15s;
+  flex-shrink: 0; white-space: nowrap;
+}
+.btn-charge:active { background: var(--green); }
+.btn-charge:disabled { background: #ccc; cursor: default; }
+
+/* ── REFUND PANEL ── */
+.refund-panel { display: none; padding-bottom: 20px; }
+.refund-panel.active { display: block; }
+.panel-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px; margin-bottom: 8px;
+}
+.refund-hint { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 14px; }
+.refund-hint a { color: var(--green-mid); }
+.search-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.search-row input {
+  flex: 1; height: var(--touch); padding: 0 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 14px; font-family: 'DM Sans'; outline: none;
+  background: var(--white);
+}
+.search-row input:focus { border-color: var(--green-mid); }
+.btn-lookup {
+  height: var(--touch); padding: 0 16px;
+  background: var(--green); color: white; border: none;
+  border-radius: 10px; font-size: 14px; font-weight: 600;
+  font-family: 'DM Sans'; cursor: pointer;
+}
+.payment-card {
+  background: var(--white); border-radius: 14px; padding: 16px;
+  border: 1.5px solid var(--border);
+}
+.payment-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.pmeta { font-size: 12px; color: #666; margin-bottom: 3px; }
+.pamount { font-size: 26px; font-weight: 700; color: var(--green); margin: 10px 0; }
+.pill {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+}
+.pill.ok  { background: #e8f5e9; color: #2e7d32; }
+.pill.bad { background: #fce4ec; color: #b71c1c; }
+.pill.meh { background: #fff8e1; color: #e65100; }
+.btn-refund {
+  height: var(--touch); padding: 0 20px;
+  background: var(--red); color: white; border: none;
+  border-radius: 10px; font-size: 14px; font-weight: 600;
+  font-family: 'DM Sans'; cursor: pointer; margin-top: 4px;
+}
+.btn-refund:active { background: var(--red-lt); }
+
+/* ── FULL-SCREEN MODAL (bottom sheet style) ── */
+.sheet-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.5);
+  align-items: flex-end; justify-content: center;
+}
+.sheet-overlay.open { display: flex; }
+.sheet {
+  background: var(--white);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px 32px;
+  width: 100%; max-width: 480px;
+  animation: slideUp .2s ease;
+  max-height: 92dvh;
+  overflow-y: auto;
+}
+@keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-handle {
+  width: 36px; height: 4px; background: var(--border);
+  border-radius: 2px; margin: 0 auto 18px;
+}
+.sheet-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 4px;
+}
+.sheet-sub { font-size: 13px; color: #888; text-align: center; margin-bottom: 18px; line-height: 1.5; }
+
+/* Cart sheet */
+.cart-list { margin-bottom: 14px; }
+.cart-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--cream);
+}
+.cart-row:last-child { border-bottom: none; }
+.cr-em { font-size: 22px; flex-shrink: 0; }
+.cr-info { flex: 1; min-width: 0; }
+.cr-name { font-size: 14px; font-weight: 600; }
+.cr-price { font-size: 12px; color: #888; }
+.cr-ctrl { display: flex; align-items: center; gap: 6px; }
+.qbtn {
+  width: var(--touch); height: var(--touch);
+  border-radius: 50%; border: 1.5px solid var(--border);
+  background: none; font-size: 18px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--green);
+}
+.qbtn:active { background: var(--cream); }
+.qnum { font-size: 15px; font-weight: 700; min-width: 22px; text-align: center; }
+.cr-total { font-size: 14px; font-weight: 700; min-width: 50px; text-align: right; }
+
+/* Fee toggle row */
+.fee-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 0; border-top: 1.5px solid var(--border);
+  border-bottom: 1px solid var(--cream);
+  margin-bottom: 10px;
+}
+.fee-lbl { font-size: 14px; font-weight: 500; }
+.fee-sub { font-size: 11px; color: #888; margin-top: 1px; }
+.tog { position: relative; width: 44px; height: 24px; }
+.tog input { opacity: 0; width: 0; height: 0; position: absolute; }
+.tog-track {
+  position: absolute; inset: 0; background: var(--border);
+  border-radius: 12px; cursor: pointer; transition: background .2s;
+}
+.tog-track::after {
+  content: ''; position: absolute;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: white; top: 3px; left: 3px;
+  transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.tog input:checked + .tog-track { background: var(--green-mid); }
+.tog input:checked + .tog-track::after { transform: translateX(20px); }
+
+.totals-block { margin-bottom: 14px; }
+.tot-line { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; color: #666; }
+.tot-line.fee-line { color: var(--brown); }
+.tot-line.grand { font-size: 18px; font-weight: 700; color: var(--green); border-top: 1.5px solid var(--border); margin-top: 6px; padding-top: 9px; }
+
+.btn-big {
+  width: 100%; height: 56px;
+  border-radius: 14px; border: none;
+  font-size: 17px; font-weight: 700; font-family: 'DM Sans';
+  cursor: pointer; transition: background .15s;
+}
+.btn-big.green { background: var(--green-mid); color: white; }
+.btn-big.green:active { background: var(--green); }
+.btn-big.outline {
+  background: none; color: #888;
+  border: 1.5px solid var(--border); margin-top: 8px;
+  font-size: 14px; font-weight: 500;
+}
+.btn-big.danger { background: var(--red); color: white; }
+
+/* Charge modal */
+.charge-amount { font-size: 48px; font-weight: 700; color: var(--green); text-align: center; margin: 16px 0 8px; }
+.charge-note { font-size: 13px; color: #888; text-align: center; margin-bottom: 20px; line-height: 1.5; }
+
+/* Connect modal */
+.field-label { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px; letter-spacing: .3px; text-transform: uppercase; }
+.field-input {
+  width: 100%; height: 48px; padding: 0 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 14px; font-family: 'DM Sans'; outline: none;
+  margin-bottom: 14px; background: var(--white);
+}
+.field-input:focus { border-color: var(--green-mid); }
+
+/* Custom amount */
+.big-input {
+  width: 100%; height: 72px; text-align: center;
+  font-size: 36px; font-weight: 700; font-family: 'DM Sans';
+  border: 2px solid var(--border); border-radius: 14px;
+  outline: none; margin-bottom: 10px; background: var(--white);
+  color: var(--green);
+}
+.big-input:focus { border-color: var(--green-mid); }
+
+/* Processing state */
+.spinner {
+  width: 44px; height: 44px; border: 4px solid var(--cream-dk);
+  border-top-color: var(--green-mid); border-radius: 50%;
+  animation: spin .7s linear infinite; margin: 10px auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--green); color: white;
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transition: all .25s; z-index: 999;
+  white-space: nowrap; pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.err { background: var(--red); }
+
+/* ── EMPTY CART ── */
+.empty-cart {
+  text-align: center; padding: 30px 20px; color: #bbb;
+}
+.empty-cart .ei { font-size: 44px; display: block; margin-bottom: 8px; }
+.empty-cart p { font-size: 14px; }
+
+/* ── LOGIN SCREEN ── */
+.login-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--green);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 32px 28px;
+}
+.login-screen.hidden { display: none; }
+.login-logo {
+  width: 72px; height: 72px; background: var(--green-mid);
+  border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 36px; margin-bottom: 20px;
+}
+.login-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; font-weight: 700; color: white;
+  text-align: center; margin-bottom: 4px;
+}
+.login-sub {
+  font-size: 13px; color: var(--tan); text-align: center;
+  margin-bottom: 36px; line-height: 1.5;
+}
+.login-label {
+  font-size: 11px; font-weight: 600; color: var(--tan);
+  text-transform: uppercase; letter-spacing: .8px;
+  margin-bottom: 8px; align-self: flex-start; width: 100%;
+}
+.login-input {
+  width: 100%; height: 56px; border-radius: 14px;
+  border: 2px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.1);
+  font-size: 20px; font-weight: 600; font-family: 'DM Sans';
+  color: white; text-align: center; outline: none;
+  margin-bottom: 16px; transition: border .2s;
+}
+.login-input::placeholder { color: rgba(255,255,255,.35); }
+.login-input:focus { border-color: var(--green-lt); }
+.login-btn {
+  width: 100%; height: 56px; border-radius: 14px; border: none;
+  background: var(--green-lt); color: var(--green);
+  font-size: 17px; font-weight: 700; font-family: 'DM Sans';
+  cursor: pointer; transition: background .15s;
+}
+.login-btn:active { background: #5e9932; }
+.login-btn:disabled { background: rgba(255,255,255,.2); color: rgba(255,255,255,.4); cursor: default; }
+.active-user-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.12); border-radius: 16px;
+  padding: 4px 10px; border: none; cursor: pointer;
+  font-family: 'DM Sans'; font-size: 11px; color: var(--tan);
+  height: 32px;
+}
+.active-user-chip:hover { background: rgba(255,255,255,.2); }
+.user-dot {
+  width: 20px; height: 20px; background: var(--green-lt);
+  border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700;
+  color: var(--green); flex-shrink: 0;
+}
+
+/* ── CASH BUTTON ── */
+.btn-cash {
+  height: var(--touch); padding: 0 14px;
+  background: var(--brown); color: white; border: none; border-radius: 12px;
+  font-size: 14px; font-weight: 700; font-family: 'DM Sans';
+  cursor: pointer; transition: background .15s; flex-shrink: 0;
+}
+.btn-cash:active { background: #3d2810; }
+.btn-cash:disabled { background: #ccc; cursor: default; }
+
+/* ── CHANGE DISPLAY ── */
+.change-block {
+  background: var(--cream); border-radius: 14px;
+  padding: 18px; text-align: center; margin: 14px 0;
+}
+.change-label { font-size: 12px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.change-amount { font-size: 44px; font-weight: 700; color: var(--green); line-height: 1; }
+.change-amount.exact { color: var(--green-mid); }
+.change-amount.short { color: var(--red); }
+.tendered-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.tendered-input {
+  flex: 1; height: 56px; text-align: center;
+  font-size: 28px; font-weight: 700; font-family: 'DM Sans';
+  border: 2px solid var(--border); border-radius: 12px;
+  outline: none; color: var(--green); background: var(--white);
+}
+.tendered-input:focus { border-color: var(--brown); }
+.quick-cash {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 14px;
+}
+.qc-btn {
+  height: 40px; border-radius: 10px; border: 1.5px solid var(--border);
+  background: var(--white); font-size: 13px; font-weight: 600;
+  font-family: 'DM Sans'; cursor: pointer; color: var(--brown);
+  transition: all .12s;
+}
+.qc-btn:active { background: var(--brown); color: white; border-color: var(--brown); }
+
+/* ── DRAWER SUMMARY ── */
+.drawer-hero {
+  background: var(--green); border-radius: 14px;
+  padding: 20px; text-align: center; margin-bottom: 14px;
+}
+.drawer-hero-label { font-size: 11px; color: var(--tan); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 4px; }
+.drawer-hero-amt   { font-size: 42px; font-weight: 700; color: white; line-height: 1; }
+.drawer-hero-sub   { font-size: 12px; color: var(--tan); margin-top: 4px; }
+.drawer-txn {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--cream); font-size: 13px;
+}
+.drawer-txn:last-child { border: none; }
+.drawer-txn-items { color: #666; font-size: 11px; margin-top: 1px; }
+.drawer-txn-amt { font-weight: 700; color: var(--green); }
+.drawer-empty { text-align: center; padding: 24px; color: #bbb; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-logo">🌱</div>
+  <div class="login-title">Tabler Farm</div>
+  <div class="login-sub">Farmers Market · Shepherdstown, WV<br>Enter your name to open the market</div>
+  <div class="login-label" style="margin-top:28px">Your name</div>
+  <input
+    type="text" id="loginName" class="login-input"
+    placeholder="e.g. Alex"
+    autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"
+    oninput="document.getElementById('loginBtn').disabled = this.value.trim().length < 2"
+    onkeydown="if(event.key==='Enter') doLogin()"
+  />
+  <button class="login-btn" id="loginBtn" disabled onclick="doLogin()">
+    Open market →
+  </button>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <div class="brand-icon">🌱</div>
+    <div class="brand-text">
+      <h1>Tabler Farm</h1>
+      <span>Shepherdstown, WV</span>
+    </div>
+  </div>
+  <div class="hdr-actions">
+    <button class="active-user-chip" id="userChip" onclick="confirmLogout()">
+      <div class="user-dot" id="userInitial">?</div>
+      <span id="userChipName">—</span>
+    </button>
+    <button class="reader-pill" id="readerPill" onclick="openSheet('connectSheet')">
+      <span class="rdot" id="rdot"></span>
+      <span id="readerLabel">Connect</span>
+    </button>
+    <button class="hdr-btn active" id="tabSell" onclick="switchTab('sell')">Sell</button>
+    <button class="hdr-btn" id="tabRefund" onclick="switchTab('refund')">Refunds</button>
+    <button class="hdr-btn" id="tabStock"  onclick="openSheet('stockSheet')">Stock</button>
+    <button class="hdr-btn" id="tabDrawer" onclick="openDrawerSheet()">💵</button>
+  </div>
+</header>
+
+<!-- MAIN SCROLL -->
+<main id="mainScroll">
+
+  <!-- SELL PANEL -->
+  <div id="sellPanel">
+    <div class="cat-scroll" id="catScroll"></div>
+    <div class="product-grid" id="productGrid"></div>
+    <div style="height:12px"></div>
+  </div>
+
+  <!-- REFUND PANEL -->
+  <div class="refund-panel" id="refundPanel">
+    <div class="panel-title">Process refund</div>
+    <p class="refund-hint">
+      Enter the Payment Intent ID from your
+      <a href="https://dashboard.stripe.com/payments" target="_blank">Stripe Dashboard</a>
+      (starts with <code>pi_</code>).
+    </p>
+    <div class="search-row">
+      <input type="text" id="piInput" placeholder="pi_3abc..." autocomplete="off" autocorrect="off" spellcheck="false" />
+      <button class="btn-lookup" onclick="lookupPayment()">Look up</button>
+    </div>
+    <div id="refundResult"></div>
+  </div>
+
+</main>
+
+<!-- CART STRIP -->
+<div class="cart-strip" id="cartStrip">
+  <div class="cart-summary" onclick="openSheet('cartSheet')">
+    <div class="cart-summary-top">
+      <span class="cart-label">Order</span>
+      <span class="cart-badge" id="cartBadge">0</span>
+    </div>
+    <div class="cart-items-preview" id="cartPreview">Tap products to add them</div>
+  </div>
+  <button class="btn-cash"   id="btnCash"   disabled onclick="openCashSheet()">💵 Cash</button>
+  <button class="btn-charge" id="btnCharge" disabled onclick="openChargeSheet()">Card</button>
+</div>
+
+<!-- ══════════ BOTTOM SHEETS ══════════ -->
+
+<!-- CART SHEET -->
+<div class="sheet-overlay" id="cartSheet" onclick="closeOnBg(event,'cartSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Your order</div>
+    <div class="cart-list" id="cartList"></div>
+
+    <!-- FEE TOGGLE -->
+    <div class="fee-row">
+      <div>
+        <div class="fee-lbl">Add card fee</div>
+        <div class="fee-sub" id="feeSubLabel">+3% · $0.00</div>
+      </div>
+      <label class="tog">
+        <input type="checkbox" id="feeToggle" onchange="renderCart()">
+        <div class="tog-track"></div>
+      </label>
+    </div>
+
+    <div class="totals-block">
+      <div class="tot-line"><span>Subtotal</span><span id="tSub">$0.00</span></div>
+      <div class="tot-line fee-line" id="tFeeRow" style="display:none"><span>Card fee (3%)</span><span id="tFee">$0.00</span></div>
+      <div class="tot-line grand"><span>Total</span><span id="tTotal">$0.00</span></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn-big green" id="btnCartCharge" style="flex:1;margin-top:0" onclick="closeSheet('cartSheet');openChargeSheet()">
+        Card
+      </button>
+      <button class="btn-big" id="btnCartCash" style="flex:1;margin-top:0;background:var(--brown);color:white;border:none" onclick="closeSheet('cartSheet');openCashSheet()">
+        💵 Cash
+      </button>
+    </div>
+    <button class="btn-big outline" onclick="clearCart();closeSheet('cartSheet')">Clear order</button>
+  </div>
+</div>
+
+<!-- CHARGE SHEET -->
+<div class="sheet-overlay" id="chargeSheet">
+  <div class="sheet" id="chargeSheetInner">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="chargeTitle">Confirm charge</div>
+    <div class="charge-amount" id="chargeAmt">$0.00</div>
+    <div class="charge-note" id="chargeNote">Present the S710 to the customer to tap or insert their card.</div>
+    <div id="chargeBtns">
+      <button class="btn-big green" onclick="processCharge()">Charge</button>
+      <button class="btn-big outline" onclick="cancelCharge()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM AMOUNT SHEET -->
+<div class="sheet-overlay" id="customSheet" onclick="closeOnBg(event,'customSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Custom amount</div>
+    <div class="sheet-sub">Enter any price — useful for bundles or unlisted items</div>
+    <input type="number" id="customAmt" class="big-input" placeholder="0.00" min="0.01" step="0.01" inputmode="decimal" />
+    <div class="field-label">Description</div>
+    <input type="text" id="customLabel" class="field-input" placeholder="e.g. Mixed veggie box" />
+    <button class="btn-big green" onclick="addCustom()">Add to order</button>
+    <button class="btn-big outline" onclick="closeSheet('customSheet')">Cancel</button>
+  </div>
+</div>
+
+<!-- CONNECT SHEET -->
+<div class="sheet-overlay" id="connectSheet" onclick="closeOnBg(event,'connectSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Connect reader</div>
+    <div class="sheet-sub">Enter your S710 reader ID from the Stripe Dashboard (starts with <code>tmr_</code>). Your server handles everything else.</div>
+    <div class="field-label">Reader ID</div>
+    <input type="text" id="readerIdInput" class="field-input" placeholder="tmr_..." autocomplete="off" autocorrect="off" spellcheck="false" />
+    <button class="btn-big green" onclick="connectReader()">Connect S710</button>
+    <button class="btn-big outline" onclick="closeSheet('connectSheet')">Cancel</button>
+  </div>
+</div>
+
+<!-- REFUND CONFIRM SHEET -->
+<div class="sheet-overlay" id="refundSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Confirm refund</div>
+    <div class="sheet-sub" id="refundSheetSub">Issue a full refund to the customer's card?</div>
+    <div class="charge-amount" id="refundSheetAmt">$0.00</div>
+    <button class="btn-big danger" onclick="processRefund()">Yes, refund</button>
+    <button class="btn-big outline" style="margin-top:8px" onclick="closeSheet('refundSheet')">Cancel</button>
+  </div>
+</div>
+
+<!-- CASH SHEET -->
+<div class="sheet-overlay" id="cashSheet" onclick="closeOnBg(event,'cashSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Cash payment</div>
+    <div class="sheet-sub" id="cashOwed">Total due: $0.00</div>
+
+    <div class="tendered-row">
+      <input type="number" id="tenderedInput" class="tendered-input"
+        placeholder="0.00" min="0" step="0.01" inputmode="decimal"
+        oninput="calcChange()" />
+    </div>
+
+    <div class="quick-cash" id="quickCash"></div>
+
+    <div class="change-block">
+      <div class="change-label" id="changeLabel">Change due</div>
+      <div class="change-amount" id="changeAmt">—</div>
+    </div>
+
+    <button class="btn-big" id="btnCompleteCash"
+      style="background:var(--brown);color:white;border:none"
+      onclick="completeCash()" disabled>
+      Complete sale
+    </button>
+    <button class="btn-big outline" style="margin-top:8px" onclick="closeSheet('cashSheet')">Cancel</button>
+  </div>
+</div>
+
+<!-- DRAWER SHEET -->
+<div class="sheet-overlay" id="drawerSheet" onclick="closeOnBg(event,'drawerSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Cash drawer</div>
+    <div class="drawer-hero">
+      <div class="drawer-hero-label">Total cash taken today</div>
+      <div class="drawer-hero-amt" id="drawerTotal">$0.00</div>
+      <div class="drawer-hero-sub" id="drawerCount">0 transactions</div>
+    </div>
+    <div id="drawerTxnList"></div>
+    <button class="btn-big" style="background:var(--green-mid);color:white;border:none;margin-top:12px"
+      onclick="downloadReport()">⬇ Download Excel report</button>
+    <button class="btn-big" style="background:var(--red);color:white;border:none;margin-top:8px"
+      onclick="resetDrawer()">Reset drawer</button>
+    <button class="btn-big outline" style="margin-top:8px" onclick="closeSheet('drawerSheet')">Done</button>
+  </div>
+</div>
+
+<!-- STOCK SHEET -->
+<div class="sheet-overlay" id="stockSheet" onclick="closeOnBg(event,'stockSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Stock</div>
+    <div class="sheet-sub">Hold any item to toggle sold out. Or use the switches below.</div>
+    <div id="stockList"></div>
+    <button class="btn-big outline" style="margin-top:12px" onclick="closeSheet('stockSheet')">Done</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════ SCRIPT ══════════ -->
+<script>
+// ════════════════════════════════════════════════
+//  PRODUCTS — edit name, price, category, emoji
+//  To add: copy a line, give it a unique id
+//  To remove: delete the line
+//  To add a category: use a new category name — tab appears automatically
+// ════════════════════════════════════════════════
+const PRODUCTS = [
+  // ── GREENS (soil-grown) ──
+  // Prices marked with TODO — update before Sunday!
+  { id:'g1', name:'Spinach',         price:3.00, category:'Greens',     emoji:'🌿' },
+  { id:'g2', name:'Mesclun Mix',     price:4.00, category:'Greens',     emoji:'🥗' },
+  { id:'g3', name:'Baby Kale',       price:3.00, category:'Greens',     emoji:'🥬', note:'limited' },
+  { id:'g4', name:'Scallions',       price:2.00, category:'Greens',     emoji:'🧅' },
+  { id:'g5', name:'Cilantro',        price:2.00, category:'Greens',     emoji:'🌱' },
+
+  // ── AQUAPONICS (★ = grown in aquaponics system) ──
+  { id:'a1', name:'Oakleaf ★',       price:4.00, category:'Aquaponics', emoji:'🥬' },
+  { id:'a2', name:'Sweet Peppers ★', price:3.50, category:'Aquaponics', emoji:'🫑' },
+  { id:'a3', name:'Bok Choy ★',      price:3.00, category:'Aquaponics', emoji:'🥦' },
+];
+
+// ── SETTINGS ──
+const CC_FEE  = 0.03;   // 3% card fee — change if needed
+const TAX     = 0;      // tax rate e.g. 0.06 = 6%
+
+// ════════════════════════════════════════════════
+
+let cart = [];
+let readerId = '';   // set when reader is registered
+let pendingRefund = { id: null, amount: 0 };
+let activeCategory = 'All';
+let soldOut = new Set();
+let currentUser = '';
+
+// ── BUILD UI ──
+function buildUI() {
+  const cats = ['All', ...new Set(PRODUCTS.map(p => p.category))];
+  document.getElementById('catScroll').innerHTML = cats.map(c =>
+    `<button class="cat-pill${c==='All'?' active':''}" onclick="setCategory('${c}',this)">${c}</button>`
+  ).join('');
+  renderGrid();
+}
+
+function setCategory(cat, btn) {
+  activeCategory = cat;
+  document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+}
+
+function renderGrid() {
+  const list = activeCategory === 'All' ? PRODUCTS : PRODUCTS.filter(p => p.category === activeCategory);
+  const g = document.getElementById('productGrid');
+  g.innerHTML = list.map(p => {
+    const qty = (cart.find(i => i.id === p.id) || {}).qty || 0;
+    const out = soldOut.has(p.id);
+    return `<div class="product-card${qty>0?' has-qty':''}${out?' sold-out':''}"
+      id="pc_${p.id}"
+      onclick="addToCart('${p.id}')"
+      ontouchstart="startHold('${p.id}')"
+      ontouchend="cancelHold()"
+      ontouchcancel="cancelHold()"
+      onmousedown="startHold('${p.id}')"
+      onmouseup="cancelHold()"
+      onmouseleave="cancelHold()">
+      <div class="sold-out-ribbon">Sold out</div>
+      <div class="card-badge" id="cb_${p.id}">${qty}</div>
+      <div class="em">${p.emoji}</div>
+      <div class="pname">${p.name}</div>
+      <div class="pprice">${out ? 'Sold out' : '$'+p.price.toFixed(2)}</div>
+    </div>`;
+  }).join('') +
+  `<div class="product-card custom-card" onclick="openSheet('customSheet')">
+    <div class="em">✏️</div>
+    <div class="pname">Custom</div>
+    <div class="pprice">Any amount</div>
+  </div>`;
+  renderStockList();
+}
+
+// Long-press to toggle sold out (0.6s hold)
+let holdTimer = null;
+function startHold(id) {
+  holdTimer = setTimeout(() => { toggleSoldOut(id); holdTimer = null; }, 600);
+}
+function cancelHold() { clearTimeout(holdTimer); holdTimer = null; }
+
+function toggleSoldOut(id) {
+  const p = PRODUCTS.find(p => p.id === id);
+  if (!p) return;
+  if (soldOut.has(id)) {
+    soldOut.delete(id);
+    // Remove from cart too if it was added before going sold out
+    toast(`${p.emoji} ${p.name} back in stock`);
+  } else {
+    soldOut.add(id);
+    // Remove from cart if present
+    if (cart.find(i => i.id === id)) {
+      cart = cart.filter(i => i.id !== id);
+      renderCart();
+    }
+    toast(`${p.emoji} ${p.name} marked sold out`);
+  }
+  renderGrid();
+}
+
+function renderStockList() {
+  const el = document.getElementById('stockList');
+  if (!el) return;
+  el.innerHTML = PRODUCTS.map(p => {
+    const out = soldOut.has(p.id);
+    return `<div class="stock-row">
+      <div class="stock-info">
+        <div class="stock-em">${p.emoji}</div>
+        <div>
+          <div class="stock-name">${p.name}</div>
+          <div class="stock-cat">${p.category} · $${p.price.toFixed(2)}</div>
+        </div>
+      </div>
+      <div class="stock-toggle-wrap">
+        <span class="stock-status ${out?'out':'in'}">${out?'Sold out':'In stock'}</span>
+        <label class="tog">
+          <input type="checkbox" ${out?'':'checked'} onchange="toggleSoldOut('${p.id}')">
+          <div class="tog-track"></div>
+        </label>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CART ──
+function addToCart(id) {
+  if (soldOut.has(id)) { toast('Item is sold out', true); return; }
+  const p = PRODUCTS.find(p => p.id === id);
+  const ex = cart.find(i => i.id === id);
+  if (ex) ex.qty++; else cart.push({...p, qty:1});
+  renderCart();
+  updateCardBadge(id);
+  toast(`${p.emoji} ${p.name} added`);
+}
+
+function updateCardBadge(id) {
+  const item = cart.find(i => i.id === id);
+  const card = document.getElementById('pc_' + id);
+  const badge = document.getElementById('cb_' + id);
+  if (!card || !badge) return;
+  if (item && item.qty > 0) {
+    badge.textContent = item.qty;
+    card.classList.add('has-qty');
+  } else {
+    card.classList.remove('has-qty');
+  }
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(i => i.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+  renderCart();
+  updateCardBadge(id);
+}
+
+function clearCart() {
+  const ids = cart.map(i => i.id);
+  cart = [];
+  ids.forEach(id => updateCardBadge(id));
+  renderCart();
+}
+
+function getAmounts() {
+  const sub    = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  const tax    = sub * TAX;
+  const feeOn  = document.getElementById('feeToggle').checked;
+  const fee    = feeOn ? (sub + tax) * CC_FEE : 0;
+  const total  = sub + tax + fee;
+  return { sub, tax, fee, total, feeOn };
+}
+
+function renderCart() {
+  const { sub, fee, total, feeOn } = getAmounts();
+  const count = cart.reduce((s,i) => s + i.qty, 0);
+
+  // Badge + preview strip
+  document.getElementById('cartBadge').textContent = count;
+  document.getElementById('cartPreview').textContent = count === 0
+    ? 'Tap products to add them'
+    : cart.map(i => `${i.qty}× ${i.name}`).join(', ');
+
+  // Cart list in sheet
+  const list = document.getElementById('cartList');
+  if (cart.length === 0) {
+    list.innerHTML = `<div class="empty-cart"><span class="ei">🛒</span><p>Nothing added yet</p></div>`;
+  } else {
+    list.innerHTML = cart.map(item => `
+      <div class="cart-row">
+        <div class="cr-em">${item.emoji||'📦'}</div>
+        <div class="cr-info">
+          <div class="cr-name">${item.name}</div>
+          <div class="cr-price">$${item.price.toFixed(2)} each</div>
+        </div>
+        <div class="cr-ctrl">
+          <button class="qbtn" onclick="changeQty('${item.id}',-1)">−</button>
+          <span class="qnum">${item.qty}</span>
+          <button class="qbtn" onclick="changeQty('${item.id}',1)">+</button>
+        </div>
+        <div class="cr-total">$${(item.price*item.qty).toFixed(2)}</div>
+      </div>`).join('');
+  }
+
+  // Totals
+  document.getElementById('tSub').textContent   = `$${sub.toFixed(2)}`;
+  document.getElementById('tFee').textContent   = `$${fee.toFixed(2)}`;
+  document.getElementById('tTotal').textContent = `$${total.toFixed(2)}`;
+  document.getElementById('tFeeRow').style.display = feeOn ? '' : 'none';
+  document.getElementById('feeSubLabel').textContent = `+${Math.round(CC_FEE*100)}% · $${(sub*CC_FEE).toFixed(2)}`;
+
+  // Buttons
+  const disabled = cart.length === 0;
+  document.getElementById('btnCharge').disabled = disabled;
+  document.getElementById('btnCharge').textContent = disabled ? 'Card' : `Card $${total.toFixed(2)}`;
+  document.getElementById('btnCash').disabled = disabled;
+  document.getElementById('btnCash').textContent = disabled ? '💵 Cash' : `💵 $${total.toFixed(2)}`;
+  document.getElementById('btnCartCharge').textContent = `Card — $${total.toFixed(2)}`;
+  document.getElementById('btnCartCharge').disabled = disabled;
+  document.getElementById('btnCartCash').textContent = `💵 Cash — $${total.toFixed(2)}`;
+  document.getElementById('btnCartCash').disabled = disabled;
+}
+
+function addCustom() {
+  const amt = parseFloat(document.getElementById('customAmt').value);
+  const lbl = document.getElementById('customLabel').value.trim() || 'Custom item';
+  if (!amt || amt <= 0) { toast('Enter a valid amount', true); return; }
+  cart.push({ id:'c_'+Date.now(), name:lbl, price:amt, qty:1, emoji:'✏️' });
+  renderCart();
+  closeSheet('customSheet');
+  document.getElementById('customAmt').value = '';
+  document.getElementById('customLabel').value = '';
+  toast(`${lbl} added`);
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  document.getElementById('sellPanel').style.display  = tab==='sell' ? '' : 'none';
+  document.getElementById('refundPanel').classList.toggle('active', tab==='refund');
+  document.getElementById('cartStrip').style.display  = tab==='sell' ? '' : 'none';
+  document.getElementById('tabSell').classList.toggle('active',   tab==='sell');
+  document.getElementById('tabRefund').classList.toggle('active', tab==='refund');
+}
+
+// ── STRIPE TERMINAL — server-driven integration ──
+// No JS SDK needed. The S710 communicates directly with Stripe over the internet.
+// Our server tells the reader what to do via the Stripe API.
+
+async function connectReader() {
+  const id = document.getElementById('readerIdInput').value.trim();
+  if (!id.startsWith('tmr_')) { toast('Reader ID must start with tmr_', true); return; }
+  try {
+    const r = await fetch('/stripe/verify-reader', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ reader_id: id })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    readerId = id;
+    setReaderStatus(true, d.label || id);
+    closeSheet('connectSheet');
+    toast('✓ S710 connected!');
+  } catch(e) {
+    toast(e.message || 'Connection failed', true);
+  }
+}
+
+function setReaderStatus(on, label) {
+  const pill = document.getElementById('readerPill');
+  document.getElementById('rdot').style.background = on ? 'var(--green-lt)' : '#666';
+  document.getElementById('readerLabel').textContent = on ? (label || 'S710') : 'Connect';
+  pill.className = 'reader-pill' + (on ? ' connected' : '');
+  if (!on) readerId = '';
+}
+
+// ── CHARGE ──
+function openChargeSheet() {
+  if (!cart.length) return;
+  const { total, fee, feeOn } = getAmounts();
+  document.getElementById('chargeTitle').textContent = 'Confirm charge';
+  document.getElementById('chargeAmt').textContent   = `$${total.toFixed(2)}`;
+  document.getElementById('chargeNote').textContent  = feeOn
+    ? `Includes $${fee.toFixed(2)} card fee. Present the S710 to the customer.`
+    : 'Present the S710 to the customer to tap, insert, or swipe.';
+  document.getElementById('chargeBtns').innerHTML = `
+    <button class="btn-big green" onclick="processCharge()">Charge</button>
+    <button class="btn-big outline" onclick="closeSheet('chargeSheet')">Cancel</button>`;
+  openSheet('chargeSheet');
+}
+
+async function processCharge() {
+  if (!readerId) { toast('Connect reader first', true); closeSheet('chargeSheet'); return; }
+  const { total, fee } = getAmounts();
+  const cents    = Math.round(total * 100);
+  const feeCents = Math.round(fee * 100);
+
+  document.getElementById('chargeSheetInner').insertAdjacentHTML('afterbegin','<div class="spinner"></div>');
+  document.getElementById('chargeTitle').textContent = 'Processing…';
+  document.getElementById('chargeNote').textContent  = 'Waiting for card on reader…';
+  document.getElementById('chargeBtns').innerHTML    = `
+    <button class="btn-big outline" onclick="cancelCharge()">Cancel</button>`;
+
+  try {
+    // Step 1: Create PaymentIntent on server
+    const piRes = await fetch('/stripe/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        amount: cents, currency: 'usd', feeAmount: feeCents,
+        reader_id: readerId,
+        items: cart.map(i => ({ name:i.name, qty:i.qty, price:i.price }))
+      })
+    });
+    const { payment_intent_id, error: piErr } = await piRes.json();
+    if (piErr) throw new Error(piErr);
+
+    // Step 2: Send payment to reader via server-driven API
+    const collectRes = await fetch('/stripe/collect-payment', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ reader_id: readerId, payment_intent_id })
+    });
+    const collectData = await collectRes.json();
+    if (collectData.error) throw new Error(collectData.error);
+
+    // Step 3: Poll for completion
+    const result = await pollPayment(payment_intent_id);
+    if (result.error) throw new Error(result.error);
+
+    // Log card sale
+    cardSales.push({
+      time:            new Date(),
+      total,
+      student:         currentUser,
+      paymentIntentId: payment_intent_id,
+      items:           cart.map(i => ({ name:i.name, qty:i.qty, price:i.price })),
+      itemStr:         cart.map(i => `${i.qty}x ${i.name}`).join(', '),
+    });
+
+    document.querySelector('#chargeSheetInner .spinner')?.remove();
+    document.getElementById('chargeTitle').textContent = '✅ Payment complete!';
+    document.getElementById('chargeAmt').textContent   = `$${total.toFixed(2)}`;
+    document.getElementById('chargeNote').textContent  = 'Thank you! Have a great day.';
+    document.getElementById('chargeBtns').innerHTML    =
+      `<button class="btn-big green" onclick="closeSheet('chargeSheet');clearCart()">Done</button>`;
+    toast('✓ Payment received!');
+
+  } catch(e) {
+    document.querySelector('#chargeSheetInner .spinner')?.remove();
+    document.getElementById('chargeTitle').textContent = '❌ Payment failed';
+    document.getElementById('chargeNote').textContent  = e.message || 'Something went wrong. Try again.';
+    document.getElementById('chargeBtns').innerHTML    =
+      `<button class="btn-big outline" onclick="closeSheet('chargeSheet')">Close</button>`;
+    toast('Payment failed', true);
+  }
+}
+
+// Poll the server every 1.5s until payment succeeds, fails, or times out (60s)
+async function pollPayment(piId, attempts = 0) {
+  if (attempts > 40) return { error: 'Timed out waiting for payment' };
+  await new Promise(r => setTimeout(r, 1500));
+  try {
+    const r = await fetch(`/stripe/payment-intent?id=${piId}`);
+    const pi = await r.json();
+    if (pi.status === 'succeeded') return { ok: true };
+    if (pi.status === 'canceled' || pi.status === 'requires_payment_method') {
+      return { error: 'Payment was declined or cancelled' };
+    }
+    return pollPayment(piId, attempts + 1);
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+async function cancelCharge() {
+  if (readerId) {
+    try {
+      await fetch('/stripe/cancel-payment', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ reader_id: readerId })
+      });
+    } catch(e) { console.warn('Cancel error:', e.message); }
+  }
+  closeSheet('chargeSheet');
+}
+
+// ── REFUNDS ──
+async function lookupPayment() {
+  const id = document.getElementById('piInput').value.trim();
+  if (!id.startsWith('pi_')) { toast('ID must start with pi_', true); return; }
+  const box = document.getElementById('refundResult');
+  box.innerHTML = `<div style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></div>`;
+  try {
+    const r  = await fetch(`/stripe/payment-intent?id=${id}`);
+    const pi = await r.json();
+    if (pi.error) throw new Error(pi.error);
+    const amt  = (pi.amount/100).toFixed(2);
+    const date = new Date(pi.created*1000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const cls  = {succeeded:'ok', canceled:'bad'}[pi.status] || 'meh';
+    box.innerHTML = `
+      <div class="payment-card">
+        <h3>Payment found</h3>
+        <div class="pmeta">ID: ${pi.id}</div>
+        <div class="pmeta">Date: ${date}</div>
+        <div class="pmeta">Status: <span class="pill ${cls}">${pi.status}</span></div>
+        <div class="pamount">$${amt}</div>
+        ${pi.status==='succeeded'
+          ? `<button class="btn-refund" onclick="openRefundConfirm('${pi.id}',${pi.amount})">Refund $${amt}</button>`
+          : `<p style="font-size:13px;color:#999">This payment can't be refunded.</p>`}
+      </div>`;
+  } catch(e) {
+    box.innerHTML = `<p style="color:var(--red);font-size:14px;padding:10px">Couldn't find that payment. Check the ID and try again.</p>`;
+  }
+}
+
+function openRefundConfirm(id, cents) {
+  pendingRefund = { id, amount: cents };
+  document.getElementById('refundSheetAmt').textContent = `$${(cents/100).toFixed(2)}`;
+  document.getElementById('refundSheetSub').textContent = `Issue a full refund of $${(cents/100).toFixed(2)} to the customer's card?`;
+  openSheet('refundSheet');
+}
+
+async function processRefund() {
+  closeSheet('refundSheet');
+  try {
+    const r = await fetch('/stripe/refund', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ payment_intent: pendingRefund.id })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    toast('✓ Refund issued!');
+    document.getElementById('refundResult').innerHTML = `
+      <div class="payment-card">
+        <span class="pill bad">Refunded</span>
+        <div class="pamount">$${(pendingRefund.amount/100).toFixed(2)}</div>
+        <p style="font-size:13px;color:#666">Refund sent. Takes 5–10 business days to appear on the customer's statement.</p>
+      </div>`;
+    pendingRefund = { id:null, amount:0 };
+  } catch(e) {
+    toast('Refund failed: ' + (e.message||'error'), true);
+  }
+}
+
+// ── CASH ──
+let cashDrawer = []; // { time, total, items, change, student }
+let cardSales  = []; // { time, total, items, student, paymentIntentId }
+
+function openCashSheet() {
+  if (!cart.length) return;
+  const { total } = getAmounts();
+  document.getElementById('cashOwed').textContent = `Total due: $${total.toFixed(2)}`;
+  document.getElementById('tenderedInput').value = '';
+  document.getElementById('changeAmt').textContent = '—';
+  document.getElementById('changeAmt').className = 'change-amount';
+  document.getElementById('changeLabel').textContent = 'Change due';
+  document.getElementById('btnCompleteCash').disabled = true;
+
+  // Build quick-cash buttons: exact + sensible round-ups
+  const quickAmts = buildQuickAmounts(total);
+  document.getElementById('quickCash').innerHTML = quickAmts.map(a =>
+    `<button class="qc-btn" onclick="setTendered(${a})">$${a % 1 === 0 ? a : a.toFixed(2)}</button>`
+  ).join('');
+
+  openSheet('cashSheet');
+  setTimeout(() => document.getElementById('tenderedInput').focus(), 300);
+}
+
+function buildQuickAmounts(total) {
+  const bills = [1,2,5,10,20,50,100];
+  const exact = parseFloat(total.toFixed(2));
+  const rounds = bills.filter(b => b >= exact).slice(0, 3);
+  const all = [exact, ...rounds];
+  // dedupe and sort
+  return [...new Set(all.map(v => parseFloat(v.toFixed(2))))].sort((a,b) => a-b).slice(0,4);
+}
+
+function setTendered(amt) {
+  document.getElementById('tenderedInput').value = amt.toFixed(2);
+  calcChange();
+}
+
+function calcChange() {
+  const { total } = getAmounts();
+  const tendered = parseFloat(document.getElementById('tenderedInput').value) || 0;
+  const change = tendered - total;
+  const el = document.getElementById('changeAmt');
+  const lbl = document.getElementById('changeLabel');
+  const btn = document.getElementById('btnCompleteCash');
+
+  if (tendered === 0) {
+    el.textContent = '—';
+    el.className = 'change-amount';
+    lbl.textContent = 'Change due';
+    btn.disabled = true;
+  } else if (change < -0.001) {
+    el.textContent = `$${Math.abs(change).toFixed(2)} short`;
+    el.className = 'change-amount short';
+    lbl.textContent = 'Not enough';
+    btn.disabled = true;
+  } else if (Math.abs(change) < 0.001) {
+    el.textContent = 'Exact';
+    el.className = 'change-amount exact';
+    lbl.textContent = 'Change due';
+    btn.disabled = false;
+  } else {
+    el.textContent = `$${change.toFixed(2)}`;
+    el.className = 'change-amount';
+    lbl.textContent = 'Change due';
+    btn.disabled = false;
+  }
+}
+
+async function completeCash() {
+  const { total } = getAmounts();
+  const tendered = parseFloat(document.getElementById('tenderedInput').value) || 0;
+  const change = Math.max(0, tendered - total);
+  const txn = {
+    time: new Date(),
+    total,
+    tendered,
+    change,
+    student: currentUser,
+    items: cart.map(i => `${i.qty}x ${i.name}`).join(', '),
+    type: 'cash'
+  };
+  cashDrawer.push(txn);
+
+  // Log to server so it survives a refresh
+  try {
+    await fetch('/log/cash-sale', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(txn)
+    });
+  } catch(e) {
+    console.warn('Could not log to server:', e.message);
+  }
+
+  closeSheet('cashSheet');
+  clearCart();
+  toast(`💵 Cash sale complete — change $${change.toFixed(2)}`);
+}
+
+function openDrawerSheet() {
+  const total = cashDrawer.reduce((s, t) => s + t.total, 0);
+  document.getElementById('drawerTotal').textContent = `$${total.toFixed(2)}`;
+  document.getElementById('drawerCount').textContent =
+    `${cashDrawer.length} transaction${cashDrawer.length !== 1 ? 's' : ''}`;
+
+  const list = document.getElementById('drawerTxnList');
+  if (cashDrawer.length === 0) {
+    list.innerHTML = `<div class="drawer-empty">No cash sales yet today</div>`;
+  } else {
+    list.innerHTML = [...cashDrawer].reverse().map((t, i) => `
+      <div class="drawer-txn">
+        <div>
+          <div style="font-weight:600;display:flex;align-items:center;gap:6px">
+            ${t.time.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
+            ${t.student ? `<span style="font-size:10px;background:#e8f5e9;color:#2e7d32;padding:1px 7px;border-radius:8px;font-weight:700">${t.student}</span>` : ''}
+          </div>
+          <div class="drawer-txn-items">${t.items}</div>
+          ${t.change > 0.001 ? `<div style="font-size:11px;color:#888">Change: $${t.change.toFixed(2)}</div>` : ''}
+        </div>
+        <div class="drawer-txn-amt">$${t.total.toFixed(2)}</div>
+      </div>`).join('');
+  }
+  openSheet('drawerSheet');
+}
+
+function resetDrawer() {
+  if (!cashDrawer.length) { closeSheet('drawerSheet'); return; }
+  if (!confirm(`Reset drawer? This will clear all ${cashDrawer.length} cash transaction(s).`)) return;
+  cashDrawer = [];
+  openDrawerSheet();
+  toast('Drawer reset');
+}
+
+// ── REPORT DOWNLOAD ──
+async function downloadReport() {
+  const allTxns = [
+    ...cardSales.map(t => ({...t, type:'card'})),
+    ...cashDrawer.map(t => ({
+      ...t,
+      paymentIntentId: '',
+      items: typeof t.items === 'string'
+        ? t.items.split(', ').map(s => { const m=s.match(/^(\d+)x (.+)$/); return m?{qty:parseInt(m[1]),name:m[2],price:0}:{qty:1,name:s,price:0}; })
+        : (t.items||[]),
+      itemStr: t.items,
+    })),
+  ].sort((a,b) => new Date(a.time) - new Date(b.time));
+
+  if (!allTxns.length) { toast('No transactions to export yet', true); return; }
+
+  try {
+    const r = await fetch('/report/excel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student:  currentUser,
+        date:     new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'}),
+        cardSales,
+        cashSales: cashDrawer,
+      })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0,10);
+    a.href     = url;
+    a.download = `tabler-farm-${dateStr}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✓ Report downloaded!');
+  } catch(e) {
+    toast('Export failed: ' + e.message, true);
+  }
+}
+
+// ── SHEETS ──
+function openSheet(id)  { document.getElementById(id).classList.add('open'); }
+function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+function closeOnBg(e, id) { if (e.target === document.getElementById(id)) closeSheet(id); }
+
+// ── TOAST ──
+let toastTmr;
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err?' err':'');
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── MARKET SESSION ──
+// One student logs in at the start of the market, one log out at the end.
+// No interaction needed in between.
+let shiftStart = null;
+
+function doLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  if (name.length < 2) return;
+  currentUser  = name;
+  shiftStart   = new Date();
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('userInitial').textContent  = name[0].toUpperCase();
+  document.getElementById('userChipName').textContent = name;
+  logShift(name, shiftStart, null, 'open');
+  toast('Market open — good luck today, ' + name + '! 🌱');
+}
+
+function confirmLogout() {
+  if (!confirm('Close the market for "' + currentUser + '"?')) return;
+  const end = new Date();
+  logShift(currentUser, shiftStart, end, 'close');
+  cart = [];
+  renderCart();
+  currentUser = '';
+  shiftStart  = null;
+  document.getElementById('loginName').value = '';
+  document.getElementById('loginBtn').disabled = true;
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+async function logShift(name, start, end, event) {
+  try {
+    await fetch('/log/shift', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student: name,
+        event,
+        start: start ? start.toISOString() : null,
+        end:   end   ? end.toISOString()   : null,
+      })
+    });
+  } catch(e) { console.warn('Shift log error:', e.message); }
+}
+
+// ── INIT ──
+buildUI();
+renderCart();
+</script>
+</body>
+</html>
