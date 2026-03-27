@@ -667,6 +667,45 @@ main {
   </div>
 </div>
 
+<!-- WEIGHT SHEET -->
+<div class="sheet-overlay" id="weightSheet" onclick="closeOnBg(event,'weightSheet')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">By weight</div>
+    <div class="sheet-sub">Select a product then enter the weight in pounds</div>
+
+    <div class="field-label">Product</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px" id="weightProductBtns">
+      <button onclick="selectWeightProduct('Sweet Peppers ★', 6.00, this)"
+        style="height:52px;border-radius:10px;border:2px solid var(--border);background:white;font-size:12px;font-weight:600;font-family:'DM Sans';cursor:pointer;color:var(--green);padding:4px">
+        🫑 Sweet Peppers<br><span style="color:var(--green-mid);font-size:11px">$6.00/lb</span>
+      </button>
+      <button onclick="selectWeightProduct('Sweet Potatoes', 3.50, this)"
+        style="height:52px;border-radius:10px;border:2px solid var(--border);background:white;font-size:12px;font-weight:600;font-family:'DM Sans';cursor:pointer;color:var(--green);padding:4px">
+        🍠 Sweet Potatoes<br><span style="color:var(--green-mid);font-size:11px">$3.50/lb</span>
+      </button>
+      <button onclick="selectWeightProduct('Turmeric', 18.00, this)"
+        style="height:52px;border-radius:10px;border:2px solid var(--border);background:white;font-size:12px;font-weight:600;font-family:'DM Sans';cursor:pointer;color:var(--green);padding:4px">
+        🟡 Turmeric<br><span style="color:var(--green-mid);font-size:11px">$18.00/lb</span>
+      </button>
+    </div>
+
+    <div class="field-label">Weight (lbs)</div>
+    <input type="number" id="weightInput" class="big-input" placeholder="0.00"
+      min="0.01" step="0.01" inputmode="decimal" oninput="calcWeightTotal()" />
+
+    <div class="change-block" id="weightTotalBlock" style="margin-bottom:14px">
+      <div class="change-label">Total</div>
+      <div class="change-amount" id="weightTotal">—</div>
+    </div>
+
+    <button class="btn-big green" id="btnAddWeight" onclick="addWeightItem()" disabled>
+      Add to order
+    </button>
+    <button class="btn-big outline" style="margin-top:8px" onclick="closeSheet('weightSheet')">Cancel</button>
+  </div>
+</div>
+
 <!-- CUSTOM AMOUNT SHEET -->
 <div class="sheet-overlay" id="customSheet" onclick="closeOnBg(event,'customSheet')">
   <div class="sheet">
@@ -838,6 +877,11 @@ function renderGrid() {
     <div class="em">✏️</div>
     <div class="pname">Custom</div>
     <div class="pprice">Any amount</div>
+  </div>
+  <div class="product-card" style="background:var(--brown);border-color:transparent" onclick="openSheet('weightSheet')">
+    <div class="em">⚖️</div>
+    <div class="pname" style="color:var(--cream)">By weight</div>
+    <div class="pprice" style="color:#e8c99a">Price per lb</div>
   </div>`;
   renderStockList();
 }
@@ -1340,6 +1384,58 @@ function resetDrawer() {
   cashDrawer = [];
   openDrawerSheet();
   toast('Drawer reset');
+}
+
+// ── BY WEIGHT ──
+let weightProduct = null;
+let weightPricePerLb = 0;
+
+function selectWeightProduct(name, price, btn) {
+  weightProduct    = name;
+  weightPricePerLb = price;
+  // Highlight selected button
+  document.querySelectorAll('#weightProductBtns button').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background  = 'white';
+  });
+  btn.style.borderColor = 'var(--green-mid)';
+  btn.style.background  = '#f0f9e4';
+  calcWeightTotal();
+}
+
+function calcWeightTotal() {
+  const weight = parseFloat(document.getElementById('weightInput').value) || 0;
+  const el     = document.getElementById('weightTotal');
+  const btn    = document.getElementById('btnAddWeight');
+  if (!weightProduct || weight <= 0) {
+    el.textContent  = '—';
+    btn.disabled    = true;
+    return;
+  }
+  const total = weightPricePerLb * weight;
+  el.textContent = '$' + total.toFixed(2);
+  btn.disabled   = false;
+}
+
+function addWeightItem() {
+  const weight = parseFloat(document.getElementById('weightInput').value) || 0;
+  if (!weightProduct || weight <= 0) return;
+  const total = parseFloat((weightPricePerLb * weight).toFixed(2));
+  const label = `${weightProduct} (${weight}lb)`;
+  cart.push({ id:'w_'+Date.now(), name:label, price:total, qty:1, emoji:'⚖️' });
+  renderCart();
+  closeSheet('weightSheet');
+  // Reset
+  document.getElementById('weightInput').value = '';
+  document.getElementById('weightTotal').textContent = '—';
+  document.getElementById('btnAddWeight').disabled = true;
+  document.querySelectorAll('#weightProductBtns button').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background  = 'white';
+  });
+  weightProduct    = null;
+  weightPricePerLb = 0;
+  toast(`⚖️ ${label} added`);
 }
 
 // ── REPORT DOWNLOAD ──
