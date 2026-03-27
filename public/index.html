@@ -785,8 +785,8 @@ const PRODUCTS = [
 
   // ── AQUAPONICS (★ = grown in aquaponics system) ──
   { id:'a1', name:'Oakleaf ★',       price:4.00, category:'Aquaponics', emoji:'🥬' },
-  { id:'a2', name:'Sweet Peppers ★', price:5.00, category:'Aquaponics', emoji:'🫑' },
-  { id:'a3', name:'Bok Choy ★',      price:5.00, category:'Aquaponics', emoji:'🥦' },
+  { id:'a2', name:'Sweet Peppers ★', price:6.00, category:'Aquaponics', emoji:'🫑' },
+  { id:'a3', name:'Bok Choy ★',      price:4.00, category:'Aquaponics', emoji:'🥦' },
 ];
 
 // ── SETTINGS ──
@@ -826,13 +826,7 @@ function renderGrid() {
     const out = soldOut.has(p.id);
     return `<div class="product-card${qty>0?' has-qty':''}${out?' sold-out':''}"
       id="pc_${p.id}"
-      onclick="addToCart('${p.id}')"
-      ontouchstart="startHold('${p.id}')"
-      ontouchend="cancelHold()"
-      ontouchcancel="cancelHold()"
-      onmousedown="startHold('${p.id}')"
-      onmouseup="cancelHold()"
-      onmouseleave="cancelHold()">
+      onclick="addToCart('${p.id}')">
       <div class="sold-out-ribbon">Sold out</div>
       <div class="card-badge" id="cb_${p.id}">${qty}</div>
       <div class="em">${p.emoji}</div>
@@ -847,13 +841,6 @@ function renderGrid() {
   </div>`;
   renderStockList();
 }
-
-// Long-press to toggle sold out (0.6s hold)
-let holdTimer = null;
-function startHold(id) {
-  holdTimer = setTimeout(() => { toggleSoldOut(id); holdTimer = null; }, 600);
-}
-function cancelHold() { clearTimeout(holdTimer); holdTimer = null; }
 
 function toggleSoldOut(id) {
   const p = PRODUCTS.find(p => p.id === id);
