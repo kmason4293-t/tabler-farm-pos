@@ -535,17 +535,30 @@ main {
 <div class="login-screen" id="loginScreen">
   <div class="login-logo">🌱</div>
   <div class="login-title">Tabler Student Farm</div>
-  <div class="login-sub">Farmers Market · Shepherdstown, WV<br>Enter your name to open the market</div>
+  <div class="login-sub">Shepherdstown, WV<br>Enter your name to get started</div>
   <div class="login-label" style="margin-top:28px">Your name</div>
   <input
     type="text" id="loginName" class="login-input"
     placeholder="e.g. Alex"
     autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false"
-    oninput="document.getElementById('loginBtn').disabled = this.value.trim().length < 2"
-    onkeydown="if(event.key==='Enter') doLogin()"
+    oninput="document.getElementById('loginNextBtn').disabled = this.value.trim().length < 2"
+    onkeydown="if(event.key==='Enter') showModeSelect()"
   />
-  <button class="login-btn" id="loginBtn" disabled onclick="doLogin()">
-    Open market →
+  <button class="login-btn" id="loginNextBtn" disabled onclick="showModeSelect()">
+    Next →
+  </button>
+</div>
+
+<!-- MODE SELECT SCREEN -->
+<div class="login-screen" id="modeScreen" style="display:none">
+  <div class="login-logo">🌱</div>
+  <div class="login-title">What are you selling today?</div>
+  <div class="login-sub" id="modeScreenSub" style="margin-bottom:32px"></div>
+  <button class="login-btn" style="margin-bottom:16px;font-size:20px;height:68px;border-radius:18px" onclick="doLogin('plant')">
+    🪴 Plant Sale
+  </button>
+  <button class="login-btn" style="font-size:20px;height:68px;border-radius:18px;background:var(--green-mid)" onclick="doLogin('market')">
+    🥬 Farmers Market
   </button>
 </div>
 
@@ -939,6 +952,22 @@ const PRODUCTS = [
   { id:'v22', name:'Zucchini',                       price:5.00, category:'Veggies',  emoji:'🥒', stock:15 },
 ];
 
+// ── FARMERS MARKET PRODUCTS ──
+const FM_PRODUCTS = [
+  // ── GREENS (soil-grown) ──
+  { id:'fm_g1', name:'Spinach',         price:5.00, category:'Greens',     emoji:'🌿' },
+  { id:'fm_g2', name:'Mesclun Mix',     price:5.00, category:'Greens',     emoji:'🥗' },
+  { id:'fm_g3', name:'Baby Kale',       price:5.00, category:'Greens',     emoji:'🥬' },
+  { id:'fm_g4', name:'Scallions',       price:4.00, category:'Greens',     emoji:'🧅' },
+  { id:'fm_g5', name:'Cilantro',        price:2.00, category:'Greens',     emoji:'🌱' },
+  { id:'fm_g6', name:'Pea Shoots',      price:2.00, category:'Greens',     emoji:'🌱' },
+  { id:'fm_g7', name:'Turnips (bunched)',price:4.00, category:'Greens',    emoji:'🫚' },
+  // ── AQUAPONICS ──
+  { id:'fm_a1', name:'Oakleaf ★',       price:4.00, category:'Aquaponics', emoji:'🥬' },
+  { id:'fm_a2', name:'Sweet Peppers ★', price:6.00, category:'Aquaponics', emoji:'🫑' },
+  { id:'fm_a3', name:'Bok Choy ★',      price:4.00, category:'Aquaponics', emoji:'🥦' },
+];
+
 // ── SETTINGS ──
 const CC_FEE  = 0.03;   // 3% card fee — change if needed
 const TAX     = 0;      // tax rate e.g. 0.06 = 6%
@@ -951,6 +980,7 @@ let pendingRefund = { id: null, amount: 0 };
 let activeCategory = 'All';
 let soldOut = new Set();
 let currentUser = '';
+let saleMode = ''; // 'plant' or 'market'
 
 // ── INVENTORY TRACKING ──
 // inventory[id] = remaining count (initialized from PRODUCTS[].stock)
@@ -976,11 +1006,42 @@ function buildUI() {
   renderCategoryView();
 }
 
+function getActiveProducts() {
+  return saleMode === 'market' ? FM_PRODUCTS : PRODUCTS;
+}
+
 function renderCategoryView() {
   currentView = 'categories';
   currentCategory = null;
   document.getElementById('catScroll').innerHTML = '';
-  const cats = [...new Set(PRODUCTS.map(p => p.category))];
+  const activeProds = getActiveProducts();
+
+  if (saleMode === 'market') {
+    // Farmers market: flat grid, no category drill-down
+    const g = document.getElementById('productGrid');
+    g.innerHTML = activeProds.map(p => {
+      const qty = (cart.find(i => i.id === p.id) || {}).qty || 0;
+      const out = soldOut.has(p.id);
+      return `<div class="product-card${qty>0?' has-qty':''}${out?' sold-out':''}"
+        id="pc_${p.id}" onclick="addToCart('${p.id}')">
+        <div class="sold-out-ribbon">Sold out</div>
+        <div class="card-badge" id="cb_${p.id}">${qty}</div>
+        <div class="em">${p.emoji}</div>
+        <div class="pname">${p.name}</div>
+        <div class="pprice">${out ? 'Sold out' : '$'+p.price.toFixed(2)}</div>
+      </div>`;
+    }).join('') +
+    `<div class="product-card custom-card" onclick="openSheet('customSheet')">
+      <div class="em">✏️</div><div class="pname">Custom</div><div class="pprice">Any amount</div>
+    </div>
+    <div class="product-card" style="background:var(--brown);border-color:transparent" onclick="openSheet('weightSheet')">
+      <div class="em">⚖️</div><div class="pname" style="color:var(--cream)">By weight</div><div class="pprice" style="color:#e8c99a">Price per lb</div>
+    </div>`;
+    renderStockList();
+    return;
+  }
+
+  const cats = [...new Set(activeProds.map(p => p.category))];
   const g = document.getElementById('productGrid');
   g.innerHTML = cats.map(cat => {
     const items = PRODUCTS.filter(p => p.category === cat);
@@ -1016,7 +1077,7 @@ function openCategory(cat) {
 function renderVarietyView() {
   const g = document.getElementById('productGrid');
   const catBar = document.getElementById('catScroll');
-  const list = PRODUCTS.filter(p => p.category === currentCategory);
+  const list = getActiveProducts().filter(p => p.category === currentCategory);
   catBar.innerHTML = `<button class="cat-pill active" onclick="renderCategoryView()">← Back</button>
     <span style="display:flex;align-items:center;font-size:14px;font-weight:600;color:var(--green);padding:0 8px;white-space:nowrap">${CAT_EMOJI[currentCategory]||'🌱'} ${currentCategory}</span>`;
   g.innerHTML = list.map(p => {
@@ -1066,7 +1127,7 @@ function toggleSoldOut(id) {
 function renderStockList() {
   const el = document.getElementById('stockList');
   if (!el) return;
-  el.innerHTML = PRODUCTS.map(p => {
+  el.innerHTML = getActiveProducts().map(p => {
     const out = soldOut.has(p.id) || inventory[p.id] <= 0;
     const rem = inventory[p.id] || 0;
     return `<div class="stock-row">
@@ -1090,7 +1151,7 @@ function renderStockList() {
 
 // ── CART ──
 function addToCart(id) {
-  const p = PRODUCTS.find(p => p.id === id);
+  const p = getActiveProducts().find(p => p.id === id);
   const isSoldOut = soldOut.has(id) || inventory[id] <= 0;
   if (isSoldOut) {
     // Show override confirmation instead of hard block
@@ -1724,16 +1785,49 @@ function toast(msg, err=false) {
 // No interaction needed in between.
 let shiftStart = null;
 
-function doLogin() {
+function showModeSelect() {
   const name = document.getElementById('loginName').value.trim();
   if (name.length < 2) return;
+  document.getElementById('modeScreenSub').textContent = 'Hi ' + name + '! Choose your sale type:';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('modeScreen').style.display = 'flex';
+}
+
+function doLogin(mode) {
+  const name = document.getElementById('loginName').value.trim();
+  if (name.length < 2) return;
+  saleMode     = mode;
   currentUser  = name;
   shiftStart   = new Date();
-  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('modeScreen').style.display = 'none';
   document.getElementById('userInitial').textContent  = name[0].toUpperCase();
   document.getElementById('userChipName').textContent = name;
+
+  // Load correct product set
+  if (mode === 'market') {
+    // Reset inventory for FM products (no stock tracking needed)
+    FM_PRODUCTS.forEach(p => { inventory[p.id] = 999; });
+  }
+
+  // Update weight sheet for farmers market (cucumbers by weight)
+  updateWeightSheet(mode);
+
   logShift(name, shiftStart, null, 'open');
-  toast('Market open — good luck today, ' + name + '! 🌱');
+  const modeLabel = mode === 'plant' ? 'Plant Sale' : 'Farmers Market';
+  toast('🌱 ' + modeLabel + ' open — good luck, ' + name + '!');
+  buildUI();
+}
+
+function updateWeightSheet(mode) {
+  const btns = document.getElementById('weightProductBtns');
+  if (mode === 'market') {
+    btns.innerHTML = `
+      <button onclick="selectWeightProduct('Cucumbers', 3.00, this)"
+        style="height:52px;border-radius:10px;border:2px solid var(--border);background:white;font-size:12px;font-weight:600;font-family:'DM Sans';cursor:pointer;color:var(--green);padding:4px">
+        🥒 Cucumbers<br><span style="color:var(--green-mid);font-size:11px">$3.00/lb</span>
+      </button>`;
+  }
+  // plant sale keeps the existing weight buttons
 }
 
 function confirmLogout() {
