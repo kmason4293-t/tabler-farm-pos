@@ -800,7 +800,8 @@ main {
     <div class="sheet-title">Stock</div>
     <div class="sheet-sub">Hold any item to toggle sold out. Or use the switches below.</div>
     <div id="stockList"></div>
-    <button class="btn-big outline" style="margin-top:12px" onclick="closeSheet('stockSheet')">Done</button>
+    <button class="btn-big" style="background:var(--green-mid);color:white;border:none;margin-top:12px" onclick="downloadInventory()">⬇ Download Inventory Report</button>
+    <button class="btn-big outline" style="margin-top:8px" onclick="closeSheet('stockSheet')">Done</button>
   </div>
 </div>
 
@@ -814,18 +815,128 @@ main {
 //  To remove: delete the line
 //  To add a category: use a new category name — tab appears automatically
 // ════════════════════════════════════════════════
-const PRODUCTS = [
-  // ── GREENS (soil-grown) ──
-  { id:'g1', name:'Spinach',         price:5.00, category:'Greens',     emoji:'🌿' },
-  { id:'g2', name:'Mesclun Mix',     price:5.00, category:'Greens',     emoji:'🥗' },
-  { id:'g3', name:'Baby Kale',       price:5.00, category:'Greens',     emoji:'🥬' },
-  { id:'g4', name:'Scallions',       price:4.00, category:'Greens',     emoji:'🧅' },
-  { id:'g5', name:'Cilantro',        price:2.00, category:'Greens',     emoji:'🌱' },
+// ── PRICING KEY (pot size → price) ──
+// 2.5x2.5 = $3, 2.5x3.5 = $4, 3.5x3.5 = $4, 4x3.5 = $5
+// 4x4/4x4.5/4x5/4.5x5 = $5, 4packs = $4, 3" = $3
+// Special: Petunias, Bee Balm, Turmeric = $7
+// Stock counts from Labels sheet (total per variety)
 
-  // ── AQUAPONICS (★ = grown in aquaponics system) ──
-  { id:'a1', name:'Oakleaf ★',       price:4.00, category:'Aquaponics', emoji:'🥬' },
-  { id:'a2', name:'Sweet Peppers ★', price:6.00, category:'Aquaponics', emoji:'🫑' },
-  { id:'a3', name:'Bok Choy ★',      price:4.00, category:'Aquaponics', emoji:'🥦' },
+const PRODUCTS = [
+  // ── BASIL ──
+  { id:'b1',  name:'Basil – Cinnamon',         price:3.00, category:'Basil',    emoji:'🌿', stock:8  },
+  { id:'b2',  name:'Basil – Holy',             price:3.00, category:'Basil',    emoji:'🌿', stock:16 },
+  { id:'b3',  name:'Basil – Prospera Italian', price:3.00, category:'Basil',    emoji:'🌿', stock:24 },
+  { id:'b4',  name:'Basil – Purple Dark Opal', price:3.00, category:'Basil',    emoji:'🌿', stock:16 },
+  { id:'b5',  name:'Basil – Thai',             price:3.00, category:'Basil',    emoji:'🌿', stock:16 },
+
+  // ── TOMATOES ──
+  // Labels totals used; sm/lg split from SIZES sheet
+  { id:'t1',  name:'Tomato – Big Beef Plus',        price:3.00, category:'Tomatoes', emoji:'🍅', stock:48 },
+  { id:'t2',  name:'Tomato – Black Cherry (sm)',     price:3.00, category:'Tomatoes', emoji:'🍒', stock:44 },
+  { id:'t3',  name:'Tomato – Black Cherry (lg)',     price:4.00, category:'Tomatoes', emoji:'🍒', stock:2  },
+  { id:'t4',  name:'Tomato – Sungold (sm)',          price:3.00, category:'Tomatoes', emoji:'🍅', stock:38 },
+  { id:'t5',  name:'Tomato – Sungold (lg)',          price:4.00, category:'Tomatoes', emoji:'🍅', stock:6  },
+  { id:'t6',  name:'Tomato – Indigo Cherry (sm)',    price:3.00, category:'Tomatoes', emoji:'🍒', stock:24 },
+  { id:'t7',  name:'Tomato – Indigo Cherry (lg)',    price:4.00, category:'Tomatoes', emoji:'🍒', stock:9  },
+  { id:'t8',  name:'Tomato – Midnight Pear',         price:3.00, category:'Tomatoes', emoji:'🍅', stock:27 },
+  { id:'t9',  name:'Tomato – Branywine (sm)',        price:3.00, category:'Tomatoes', emoji:'🍅', stock:32 },
+  { id:'t10', name:'Tomato – Branywine (lg)',        price:4.00, category:'Tomatoes', emoji:'🍅', stock:5  },
+  { id:'t11', name:'Tomato – Cherokee Purple (sm)',  price:3.00, category:'Tomatoes', emoji:'🍅', stock:32 },
+  { id:'t12', name:'Tomato – Cherokee Purple (lg)',  price:4.00, category:'Tomatoes', emoji:'🍅', stock:6  },
+  { id:'t13', name:'Tomato – Moskvitch (sm)',        price:3.00, category:'Tomatoes', emoji:'🍅', stock:26 },
+  { id:'t14', name:'Tomato – Moskvitch (lg)',        price:4.00, category:'Tomatoes', emoji:'🍅', stock:12 },
+  { id:'t15', name:'Tomato – Striped German (sm)',   price:3.00, category:'Tomatoes', emoji:'🍅', stock:25 },
+  { id:'t16', name:'Tomato – Striped German (lg)',   price:4.00, category:'Tomatoes', emoji:'🍅', stock:4  },
+  { id:'t17', name:'Tomato – Attracta',              price:4.00, category:'Tomatoes', emoji:'🍅', stock:7  },
+  { id:'t18', name:'Tomato – Paste Tiren',           price:3.00, category:'Tomatoes', emoji:'🍅', stock:15 },
+  { id:'t19', name:'Tomato – WV 63',                 price:3.00, category:'Tomatoes', emoji:'🍅', stock:27 },
+
+  // ── PEPPERS ──
+  { id:'p1',  name:'Pepper – Banana/Goddess',        price:3.00, category:'Peppers',  emoji:'🫑', stock:16 },
+  { id:'p2',  name:'Pepper – Black Magic Jalapeño',  price:4.00, category:'Peppers',  emoji:'🌶️', stock:11 },
+  { id:'p3',  name:'Pepper – Cali Wonder',           price:4.00, category:'Peppers',  emoji:'🫑', stock:20 },
+  { id:'p4',  name:'Pepper – Golden Cali (sm)',      price:3.00, category:'Peppers',  emoji:'🫑', stock:16 },
+  { id:'p5',  name:'Pepper – Golden Cali (lg)',      price:4.00, category:'Peppers',  emoji:'🫑', stock:3  },
+  { id:'p6',  name:'Pepper – Habanero',              price:4.00, category:'Peppers',  emoji:'🌶️', stock:8  },
+  { id:'p7',  name:'Pepper – Long Red Cayenne',      price:4.00, category:'Peppers',  emoji:'🌶️', stock:4  },
+  { id:'p8',  name:'Pepper – Lunchbox',              price:4.00, category:'Peppers',  emoji:'🫑', stock:23 },
+  { id:'p9',  name:'Pepper – Poblano',               price:4.00, category:'Peppers',  emoji:'🫑', stock:16 },
+  { id:'p10', name:'Pepper – Red Flame Cayenne',     price:4.00, category:'Peppers',  emoji:'🌶️', stock:4  },
+  { id:'p11', name:'Pepper – Shishito',              price:4.00, category:'Peppers',  emoji:'🫑', stock:16 },
+  { id:'p12', name:'Pepper – Yellow Jalapeño',       price:4.00, category:'Peppers',  emoji:'🌶️', stock:4  },
+
+  // ── HERBS ──
+  { id:'h1',  name:'Herb – Anise Hyssop (lg)',       price:5.00, category:'Herbs',    emoji:'🌿', stock:16 },
+  { id:'h2',  name:'Herb – Anise Hyssop (sm)',       price:4.00, category:'Herbs',    emoji:'🌿', stock:6  },
+  { id:'h4',  name:'Herb – Bee Balm',                price:7.00, category:'Herbs',    emoji:'🌸', stock:5  },
+  { id:'h5',  name:'Herb – Borage',                  price:4.00, category:'Herbs',    emoji:'🌿', stock:12 },
+  { id:'h6',  name:'Herb – Chives (lg)',              price:5.00, category:'Herbs',    emoji:'🌿', stock:4  },
+  { id:'h7',  name:'Herb – Chives (sm)',              price:4.00, category:'Herbs',    emoji:'🌿', stock:9  },
+  { id:'h8',  name:'Herb – Chives (md)',              price:5.00, category:'Herbs',    emoji:'🌿', stock:3  },
+  { id:'h9',  name:'Herb – Cilantro (4pk)',           price:4.00, category:'Herbs',    emoji:'🌿', stock:8  },
+  { id:'h10', name:'Herb – Echinacea (sm)',           price:4.00, category:'Herbs',    emoji:'🌸', stock:16 },
+  { id:'h11', name:'Herb – Echinacea (lg)',           price:5.00, category:'Herbs',    emoji:'🌸', stock:10 },
+  { id:'h12', name:'Herb – Eucalyptus (sm)',          price:4.00, category:'Herbs',    emoji:'🌿', stock:13 },
+  { id:'h13', name:'Herb – Eucalyptus (lg)',          price:5.00, category:'Herbs',    emoji:'🌿', stock:16 },
+  { id:'h14', name:'Herb – Feverfew',                 price:5.00, category:'Herbs',    emoji:'🌿', stock:9  },
+  { id:'h15', name:'Herb – German Chamomile',         price:5.00, category:'Herbs',    emoji:'🌼', stock:11 },
+  { id:'h16', name:'Herb – Parsley',                  price:4.00, category:'Herbs',    emoji:'🌿', stock:32 },
+  { id:'h17', name:'Herb – Rosemary (lg)',            price:5.00, category:'Herbs',    emoji:'🌿', stock:7  },
+  { id:'h18', name:'Herb – Rosemary (sm)',            price:4.00, category:'Herbs',    emoji:'🌿', stock:8  },
+  { id:'h19', name:'Herb – Sage (lg)',                price:5.00, category:'Herbs',    emoji:'🌿', stock:6  },
+  { id:'h20', name:'Herb – Sage (3")',                price:3.00, category:'Herbs',    emoji:'🌿', stock:12 },
+  { id:'h21', name:'Herb – Thyme',                   price:5.00, category:'Herbs',    emoji:'🌿', stock:3  },
+  { id:'h22', name:'Herb – Bronze Fennel',            price:5.00, category:'Herbs',    emoji:'🌿', stock:17 },
+
+  // ── FLOWERS ──
+  { id:'f1',  name:'Flower – Alyssum (sm)',          price:3.00, category:'Flowers',  emoji:'🌸', stock:32 },
+  { id:'f2',  name:'Flower – Alyssum (4pk)',         price:4.00, category:'Flowers',  emoji:'🌸', stock:4  },
+  { id:'f3',  name:'Flower – Cosmos Memories',       price:4.00, category:'Flowers',  emoji:'🌸', stock:13 },
+  { id:'f4',  name:'Flower – French Marigold',       price:5.00, category:'Flowers',  emoji:'🌼', stock:15 },
+  { id:'f5',  name:'Flower – Lions Mouth',           price:3.00, category:'Flowers',  emoji:'🌸', stock:6  },
+  { id:'f6',  name:'Flower – Mexican Marigold',      price:3.00, category:'Flowers',  emoji:'🌼', stock:24 },
+  { id:'f7',  name:'Flower – Petunia (planter)',     price:7.00, category:'Flowers',  emoji:'🌺', stock:7  },
+  { id:'f8',  name:'Flower – Petunia (2")',          price:3.00, category:'Flowers',  emoji:'🌺', stock:18 },
+  { id:'f9',  name:'Flower – Petunia (4")',          price:5.00, category:'Flowers',  emoji:'🌺', stock:20 },
+  { id:'f10', name:'Flower – Petunia (4pk)',         price:4.00, category:'Flowers',  emoji:'🌺', stock:14 },
+  { id:'f11', name:'Flower – Snapdragon',            price:5.00, category:'Flowers',  emoji:'🌸', stock:33 },
+  { id:'f12', name:'Flower – Strawflower (sm)',      price:5.00, category:'Flowers',  emoji:'🌸', stock:12 },
+  { id:'f13', name:'Flower – Strawflower (lg)',      price:5.00, category:'Flowers',  emoji:'🌸', stock:10 },
+  { id:'f14', name:'Flower – Hibiscus',              price:5.00, category:'Flowers',  emoji:'🌺', stock:30 },
+  { id:'f15', name:'Marigold – French (4pk)',        price:4.00, category:'Flowers',  emoji:'🌼', stock:3  },
+  { id:'z1',  name:'Zinnia – Agave',                 price:4.00, category:'Flowers',  emoji:'🌸', stock:8  },
+  { id:'z2',  name:'Zinnia – Aurora',                price:4.00, category:'Flowers',  emoji:'🌸', stock:8  },
+  { id:'z3',  name:'Zinnia – Double Zahara',         price:4.00, category:'Flowers',  emoji:'🌸', stock:8  },
+  { id:'z4',  name:'Zinnia – Linen',                 price:4.00, category:'Flowers',  emoji:'🌸', stock:8  },
+  { id:'s1',  name:'Sunflower – Evening Sun',        price:3.00, category:'Flowers',  emoji:'🌻', stock:8  },
+  { id:'s2',  name:'Sunflower – Florenza',           price:3.00, category:'Flowers',  emoji:'🌻', stock:8  },
+  { id:'s3',  name:'Sunflower – Holiday',            price:3.00, category:'Flowers',  emoji:'🌻', stock:8  },
+  { id:'s4',  name:'Sunflower – Teddy Bear',         price:3.00, category:'Flowers',  emoji:'🌻', stock:8  },
+
+  // ── VEGGIES ──
+  { id:'v1',  name:'Bok Choy',              price:4.00, category:'Veggies',  emoji:'🥦', stock:9  },
+  { id:'v2',  name:'Broccoli',                       price:4.00, category:'Veggies',  emoji:'🥦', stock:9  },
+  { id:'v3',  name:'Cabbage – Green',                price:4.00, category:'Veggies',  emoji:'🥬', stock:6  },
+  { id:'v4',  name:'Cabbage – Napa',                 price:4.00, category:'Veggies',  emoji:'🥬', stock:6  },
+  { id:'v5',  name:'Cabbage – Red',                  price:4.00, category:'Veggies',  emoji:'🥬', stock:6  },
+  { id:'v6',  name:'Cauliflower – Clementine',       price:4.00, category:'Veggies',  emoji:'🥦', stock:6  },
+  { id:'v7',  name:'Cauliflower – Purple Moon',      price:4.00, category:'Veggies',  emoji:'🥦', stock:6  },
+  { id:'v8',  name:'Celery – Cutting',               price:3.00, category:'Veggies',  emoji:'🌿', stock:14 },
+  { id:'v9',  name:'Cucumber – Pickling',            price:4.00, category:'Veggies',  emoji:'🥒', stock:8  },
+  { id:'v10', name:'Cucumber – Shintokiwa',          price:4.00, category:'Veggies',  emoji:'🥒', stock:8  },
+  { id:'v11', name:'Cucumber – Silver Slicer',       price:4.00, category:'Veggies',  emoji:'🥒', stock:8  },
+  { id:'v12', name:'Eggplant – Fairytale',           price:3.00, category:'Veggies',  emoji:'🍆', stock:8  },
+  { id:'v13', name:'Eggplant – Turkish Delight',     price:3.00, category:'Veggies',  emoji:'🍆', stock:8  },
+  { id:'v14', name:'Kale – Curly/Roja/Black/Collards (4pk)', price:4.00, category:'Veggies', emoji:'🥬', stock:8 },
+  { id:'v15', name:'Lettuce – Allstar Salad Mix (4pk)', price:4.00, category:'Veggies', emoji:'🥗', stock:8 },
+  { id:'v16', name:'Pumpkin – Musquee de Provence',  price:5.00, category:'Veggies',  emoji:'🎃', stock:5  },
+  { id:'v17', name:'Summer Squash – Patty Pan',      price:5.00, category:'Veggies',  emoji:'🥒', stock:15 },
+  { id:'v18', name:'Swiss Chard – Bright Lights (lg)', price:4.00, category:'Veggies',  emoji:'🌿', stock:10 },
+  { id:'v18b',name:'Swiss Chard – Bright Lights (4pk)', price:4.00, category:'Veggies',  emoji:'🌿', stock:8  },
+  { id:'v19', name:'Turmeric',                       price:7.00, category:'Veggies',  emoji:'🟡', stock:20 },
+  { id:'v20', name:'Winter Squash – Buttercup',      price:5.00, category:'Veggies',  emoji:'🎃', stock:5  },
+  { id:'v21', name:'Winter Squash – Candy Roast',    price:5.00, category:'Veggies',  emoji:'🎃', stock:5  },
+  { id:'v22', name:'Zucchini',                       price:5.00, category:'Veggies',  emoji:'🥒', stock:15 },
 ];
 
 // ── SETTINGS ──
@@ -841,36 +952,46 @@ let activeCategory = 'All';
 let soldOut = new Set();
 let currentUser = '';
 
+// ── INVENTORY TRACKING ──
+// inventory[id] = remaining count (initialized from PRODUCTS[].stock)
+const inventory = {};
+PRODUCTS.forEach(p => { inventory[p.id] = p.stock; });
+
+// ── CATEGORY EMOJIS ──
+const CAT_EMOJI = {
+  'Basil':    '🌿',
+  'Tomatoes': '🍅',
+  'Peppers':  '🌶️',
+  'Herbs':    '🌿',
+  'Flowers':  '🌸',
+  'Veggies':  '🥦',
+};
+
+// ── VIEW STATE ──
+let currentView = 'categories';
+let currentCategory = null;
+
 // ── BUILD UI ──
 function buildUI() {
-  const cats = ['All', ...new Set(PRODUCTS.map(p => p.category))];
-  document.getElementById('catScroll').innerHTML = cats.map(c =>
-    `<button class="cat-pill${c==='All'?' active':''}" onclick="setCategory('${c}',this)">${c}</button>`
-  ).join('');
-  renderGrid();
+  renderCategoryView();
 }
 
-function setCategory(cat, btn) {
-  activeCategory = cat;
-  document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderGrid();
-}
-
-function renderGrid() {
-  const list = activeCategory === 'All' ? PRODUCTS : PRODUCTS.filter(p => p.category === activeCategory);
+function renderCategoryView() {
+  currentView = 'categories';
+  currentCategory = null;
+  document.getElementById('catScroll').innerHTML = '';
+  const cats = [...new Set(PRODUCTS.map(p => p.category))];
   const g = document.getElementById('productGrid');
-  g.innerHTML = list.map(p => {
-    const qty = (cart.find(i => i.id === p.id) || {}).qty || 0;
-    const out = soldOut.has(p.id);
-    return `<div class="product-card${qty>0?' has-qty':''}${out?' sold-out':''}"
-      id="pc_${p.id}"
-      onclick="addToCart('${p.id}')">
-      <div class="sold-out-ribbon">Sold out</div>
-      <div class="card-badge" id="cb_${p.id}">${qty}</div>
-      <div class="em">${p.emoji}</div>
-      <div class="pname">${p.name}</div>
-      <div class="pprice">${out ? 'Sold out' : '$'+p.price.toFixed(2)}</div>
+  g.innerHTML = cats.map(cat => {
+    const items = PRODUCTS.filter(p => p.category === cat);
+    const inStock = items.filter(p => (inventory[p.id] || 0) > 0 && !soldOut.has(p.id)).length;
+    const total = items.length;
+    const cartQty = items.reduce((s, p) => s + ((cart.find(i => i.id === p.id) || {}).qty || 0), 0);
+    return `<div class="product-card${cartQty > 0 ? ' has-qty' : ''}" onclick="openCategory('${cat}')">
+      <div class="card-badge" style="display:${cartQty>0?'block':'none'}">${cartQty}</div>
+      <div class="em">${CAT_EMOJI[cat] || '🌱'}</div>
+      <div class="pname">${cat}</div>
+      <div class="pprice" style="font-size:11px;font-weight:500;color:#888">${inStock}/${total} in stock</div>
     </div>`;
   }).join('') +
   `<div class="product-card custom-card" onclick="openSheet('customSheet')">
@@ -885,6 +1006,43 @@ function renderGrid() {
   </div>`;
   renderStockList();
 }
+
+function openCategory(cat) {
+  currentView = 'varieties';
+  currentCategory = cat;
+  renderVarietyView();
+}
+
+function renderVarietyView() {
+  const g = document.getElementById('productGrid');
+  const catBar = document.getElementById('catScroll');
+  const list = PRODUCTS.filter(p => p.category === currentCategory);
+  catBar.innerHTML = `<button class="cat-pill active" onclick="renderCategoryView()">← Back</button>
+    <span style="display:flex;align-items:center;font-size:14px;font-weight:600;color:var(--green);padding:0 8px;white-space:nowrap">${CAT_EMOJI[currentCategory]||'🌱'} ${currentCategory}</span>`;
+  g.innerHTML = list.map(p => {
+    const qty = (cart.find(i => i.id === p.id) || {}).qty || 0;
+    const out = soldOut.has(p.id) || inventory[p.id] <= 0;
+    const rem = inventory[p.id] || 0;
+    const displayName = p.name.replace(/^(Basil|Tomato|Pepper|Herb|Flower|Marigold|Zinnia|Sunflower|Bok Choy|Broccoli|Cabbage|Cauliflower|Celery|Cucumber|Eggplant|Kale|Lettuce|Pumpkin|Summer Squash|Swiss Chard|Winter Squash|Zucchini|Turmeric)\s[\u2013-]\s/i, '');
+    return `<div class="product-card${qty>0?' has-qty':''}${out?' sold-out':''}"
+      id="pc_${p.id}" onclick="addToCart('${p.id}')">
+      <div class="sold-out-ribbon">Sold out</div>
+      <div class="card-badge" id="cb_${p.id}">${qty}</div>
+      <div class="em">${p.emoji}</div>
+      <div class="pname">${displayName}</div>
+      <div class="pprice">${out ? 'Sold out' : '$'+p.price.toFixed(2)}</div>
+      ${!out ? `<div class="punit">${rem} left</div>` : ''}
+    </div>`;
+  }).join('');
+  renderStockList();
+}
+
+function renderGrid() {
+  if (currentView === 'varieties') renderVarietyView();
+  else renderCategoryView();
+}
+
+function setCategory(cat, btn) {}
 
 function toggleSoldOut(id) {
   const p = PRODUCTS.find(p => p.id === id);
@@ -909,13 +1067,14 @@ function renderStockList() {
   const el = document.getElementById('stockList');
   if (!el) return;
   el.innerHTML = PRODUCTS.map(p => {
-    const out = soldOut.has(p.id);
+    const out = soldOut.has(p.id) || inventory[p.id] <= 0;
+    const rem = inventory[p.id] || 0;
     return `<div class="stock-row">
       <div class="stock-info">
         <div class="stock-em">${p.emoji}</div>
         <div>
           <div class="stock-name">${p.name}</div>
-          <div class="stock-cat">${p.category} · $${p.price.toFixed(2)}</div>
+          <div class="stock-cat">${p.category} · $${p.price.toFixed(2)} · <b>${rem} left</b></div>
         </div>
       </div>
       <div class="stock-toggle-wrap">
@@ -931,11 +1090,20 @@ function renderStockList() {
 
 // ── CART ──
 function addToCart(id) {
-  if (soldOut.has(id)) { toast('Item is sold out', true); return; }
   const p = PRODUCTS.find(p => p.id === id);
+  const isSoldOut = soldOut.has(id) || inventory[id] <= 0;
+  if (isSoldOut) {
+    // Show override confirmation instead of hard block
+    if (!confirm(`${p.emoji} ${p.name} shows 0 in stock.\n\nSell it anyway?`)) return;
+    // Allow the sale — inventory goes negative so report shows the discrepancy
+  }
   const ex = cart.find(i => i.id === id);
   if (ex) ex.qty++; else cart.push({...p, qty:1});
+  inventory[id] = (inventory[id] || 0) - 1;
+  // Only auto-mark sold out if we hit exactly 0 (not on override)
+  if (inventory[id] <= 0) soldOut.add(id);
   renderCart();
+  renderGrid();
   updateCardBadge(id);
   toast(`${p.emoji} ${p.name} added`);
 }
@@ -956,17 +1124,35 @@ function updateCardBadge(id) {
 function changeQty(id, delta) {
   const item = cart.find(i => i.id === id);
   if (!item) return;
+  if (delta > 0 && inventory[id] <= 0) {
+    const p = PRODUCTS.find(p => p.id === id);
+    if (!confirm(`${p.emoji} ${p.name} shows 0 in stock.\n\nAdd one more anyway?`)) return;
+  }
   item.qty += delta;
+  if (delta < 0) {
+    inventory[id] = (inventory[id] || 0) + 1;
+    if (inventory[id] > 0) soldOut.delete(id);
+  } else {
+    inventory[id] = (inventory[id] || 0) - 1;
+    if (inventory[id] <= 0) soldOut.add(id);
+  }
   if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
   renderCart();
+  renderGrid();
   updateCardBadge(id);
 }
 
 function clearCart() {
   const ids = cart.map(i => i.id);
+  // Restore inventory for all items in cart
+  cart.forEach(item => {
+    inventory[item.id] = (inventory[item.id] || 0) + item.qty;
+    if (inventory[item.id] > 0) soldOut.delete(item.id);
+  });
   cart = [];
   ids.forEach(id => updateCardBadge(id));
   renderCart();
+  renderGrid();
 }
 
 function getAmounts() {
@@ -1436,6 +1622,44 @@ function addWeightItem() {
   weightProduct    = null;
   weightPricePerLb = 0;
   toast(`⚖️ ${label} added`);
+}
+
+// ── INVENTORY REPORT DOWNLOAD ──
+async function downloadInventory() {
+  try {
+    const rows = [['Category', 'Variety', 'Price', 'Started With', 'Sold', 'Remaining']];
+    PRODUCTS.forEach(p => {
+      const started = p.stock;
+      const remaining = inventory[p.id] || 0;
+      const sold = started - remaining;
+      rows.push([p.category, p.name, p.price.toFixed(2), started, sold, remaining]);
+    });
+    // Total row
+    const totalStarted   = PRODUCTS.reduce((s,p) => s + p.stock, 0);
+    const totalRemaining = PRODUCTS.reduce((s,p) => s + (inventory[p.id]||0), 0);
+    const totalSold      = totalStarted - totalRemaining;
+    const totalRevenue   = PRODUCTS.reduce((s,p) => s + p.price*(p.stock-(inventory[p.id]||0)), 0);
+    rows.push([]);
+    rows.push(['TOTALS', '', '', totalStarted, totalSold, totalRemaining]);
+    rows.push(['Revenue from plants sold', '', '', '', '', '$'+totalRevenue.toFixed(2)]);
+
+    const r = await fetch('/report/inventory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rows, date: new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}), student: currentUser })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `tabler-farm-inventory-${new Date().toISOString().slice(0,10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✓ Inventory report downloaded!');
+  } catch(e) {
+    toast('Export failed: ' + e.message, true);
+  }
 }
 
 // ── REPORT DOWNLOAD ──
